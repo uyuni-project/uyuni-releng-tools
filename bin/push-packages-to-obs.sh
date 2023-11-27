@@ -1,4 +1,9 @@
 #! /bin/bash
+
+# SPDX-FileCopyrightText: 2023 SUSE LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 set -e
 #
