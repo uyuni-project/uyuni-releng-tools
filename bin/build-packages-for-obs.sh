@@ -1,5 +1,6 @@
 #! /bin/bash
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+SHARE_DIR="/usr/share/uyuni-releng-tools/"
 set -e
 #
 # For all packages in git:/rel-eng/packages or git:/.tito/packages (or defined in $PACKAGES)
@@ -194,7 +195,11 @@ while read PKG_NAME PKG_VER PKG_DIR; do
   # If the package does not have sources, we don't need service or .obsinfo file
   if [ "${SOURCE}" != "" ]; then
     # Copy service
-    cp ${BASE_DIR}/_service "${SRPM_DIR}/${PKG_NAME}"
+    if [ -e "${BASE_DIR}/../_service" ]; then
+        cp ${BASE_DIR}/../_service "${SRPM_DIR}/${PKG_NAME}"
+    else
+        cp ${SHARE_DIR}/_service "${SRPM_DIR}/${PKG_NAME}"
+    fi
     # Create .obsinfo file
     cat > "${SRPM_DIR}/${PKG_NAME}/${PKG_NAME}.obsinfo" <<EOF
 name: ${PKG_NAME}
