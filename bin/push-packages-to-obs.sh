@@ -350,7 +350,7 @@ while read PKG_NAME; do
       $OSC status
       if [ -z "$FAKE_COMITTOBS" ]; then
         if [ -z "$OBS_TEST_PROJECT" ]; then
-      	  $OSC ci -m "Git submitt $GIT_BRANCH($GIT_CURR_HEAD)"
+      	  $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
         else
           $OSC linkpac -c -f $OBS_PROJ $PKG_NAME $OBS_TEST_PROJECT
           $OSC co $OBS_TEST_PROJECT $PKG_NAME
@@ -360,7 +360,7 @@ while read PKG_NAME; do
           cp -v * $OBS_TEST_PROJECT/$PKG_NAME  
           cd $OBS_TEST_PROJECT/$PKG_NAME
           $OSC add *
-          $OSC ci -m "Git submitt $GIT_BRANCH($GIT_CURR_HEAD)"
+          $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
           cd -
         fi
       else
