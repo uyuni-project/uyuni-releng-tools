@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2023 SUSE LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Push to OBS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  push_to_obs:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      
+      - name: Add repositories
+        run: |
+          sudo sh -c 'echo "deb https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/ /" >/etc/apt/sources.list.d/utils.list'
+          curl -L https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/Release.key | sudo apt-key add -
+          sudo sh -c 'echo "deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/ /" >/etc/apt/sources.list.d/tools.list'
+          curl -L https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/Release.key | sudo apt-key add -
+          sudo apt update
+
+      - name: Install dependencies
+        run: sudo apt-get install -y --no-install-recommends tito osc
+
+      - name: Upload to OBS
+        run: |
+          mkdir -p ~/.config/osc
+          echo -e "[general]\napiurl=https://api.opensuse.org\n\n[https://api.opensuse.org]\nuser = ${{ secrets.OBS_USER }}\npass = ${{ secrets.OBS_PASS }}\n" >~/.config/osc/oscrc
+          chmod -R 700 ~/.config/osc
+          ./bin/build-packages-for-obs && ./bin/push-packages-to-obs
+        env:
+          TEST: "--test"
+          OSCAPI: https://api.opensuse.org
+          OBS_PROJ: home:cbosdonnat:branches:systemsmanagement:Uyuni:Utils
