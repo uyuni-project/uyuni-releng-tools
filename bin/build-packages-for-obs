@@ -7,6 +7,9 @@
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 SHARE_DIR="/usr/share/uyuni-releng-tools/"
 set -e
+
+echo "HACK"
+
 #
 # For all packages in git:/rel-eng/packages or git:/.tito/packages (or defined in $PACKAGES)
 # provide tarball, spec and changes in $WORKSPACE/SRPMS/<package>

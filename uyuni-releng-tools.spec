@@ -23,6 +23,7 @@ Tools helping to prepare Uyuni release submissions.
 %autosetup
 
 %build
+# Test comment
 
 %install
 install -m 0755 -vd %{buildroot}%{_bindir}
