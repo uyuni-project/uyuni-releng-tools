@@ -37,6 +37,9 @@ FAKE_COMITTOBS=${FAKE_COMITTOBS:+1}
 KEEP_SRPMS=${KEEP_SRPMS:-FALSE}
 
 DIFF="diff -u"
+      
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+GIT_CURR_HEAD=$(git rev-parse --short HEAD)
 
 grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
   cat <<EOF
