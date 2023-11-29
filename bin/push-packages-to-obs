@@ -1,4 +1,9 @@
 #! /bin/bash
+
+# SPDX-FileCopyrightText: 2023 SUSE LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 set -e
 #
@@ -32,6 +37,9 @@ FAKE_COMITTOBS=${FAKE_COMITTOBS:+1}
 KEEP_SRPMS=${KEEP_SRPMS:-FALSE}
 
 DIFF="diff -u"
+      
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+GIT_CURR_HEAD=$(git rev-parse --short HEAD)
 
 grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
   cat <<EOF
@@ -350,7 +358,7 @@ while read PKG_NAME; do
       $OSC status
       if [ -z "$FAKE_COMITTOBS" ]; then
         if [ -z "$OBS_TEST_PROJECT" ]; then
-      	  $OSC ci -m "Git submitt $GIT_BRANCH($GIT_CURR_HEAD)"
+      	  $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
         else
           $OSC linkpac -c -f $OBS_PROJ $PKG_NAME $OBS_TEST_PROJECT
           $OSC co $OBS_TEST_PROJECT $PKG_NAME
@@ -360,7 +368,7 @@ while read PKG_NAME; do
           cp -v * $OBS_TEST_PROJECT/$PKG_NAME  
           cd $OBS_TEST_PROJECT/$PKG_NAME
           $OSC add *
-          $OSC ci -m "Git submitt $GIT_BRANCH($GIT_CURR_HEAD)"
+          $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
           cd -
         fi
       else
