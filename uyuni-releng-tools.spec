@@ -15,6 +15,11 @@ Group:          System/Management
 URL:            https://github.com/uyuni-project/uyuni-releng-tools/
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
+Requires:       build
+Requires:       cpio
+Requires:       git-core
+Requires:       osc
+Requires:       tito
 
 %description
 Tools helping to prepare Uyuni release submissions.
