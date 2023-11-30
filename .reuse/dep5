@@ -9,7 +9,7 @@ Source: https://github.com/uyuni-project/uyuni-releng-tools/
 # Copyright: $YEAR $NAME <$CONTACT>
 # License: ...
 
-Files: uyuni-releng-tools.changes
+Files: uyuni-releng-tools.changes*
 Copyright: 2023 SUSE LLC
 License: Apache-2.0
 
