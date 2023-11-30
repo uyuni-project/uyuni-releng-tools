@@ -1,0 +1,1 @@
+- Fix the path when pushing containers and helm charts to OBS
