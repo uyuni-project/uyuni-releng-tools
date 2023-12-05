@@ -16,3 +16,7 @@ License: Apache-2.0
 Files: .tito/*
 Copyright: 2023 SUSE LLC
 License: Apache-2.0
+
+Files: _service
+Copyright: 2023 SUSE LLC
+License: Apache-2.0
