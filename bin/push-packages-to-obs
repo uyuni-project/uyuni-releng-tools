@@ -141,8 +141,18 @@ function copy_changed_package()
     local stem="$(basename "$F")"
     case "$stem" in
       *.tar.*|*.tar|*.tgz|*.tbz2|*.obscpio)
-        # tarball diff or rename not necessarily implies content change!
-        ttar="$tdir/$stem"
+        # If there is a matching file, diff it now
+        if [ -f "$sdir/$stem" ]; then
+          local tmpd=$(mktemp -d)
+          tar_diff_p1 "$tdir/$stem" "$sdir/$stem" "$tmpd" || {
+            diffs=1
+          }
+          rm -rf "$tmpd"
+        else
+          # tarball diff or rename not necessarily implies content change!
+          # May be a renamed file, maybe a new one, store for diffing later
+          ttar="$tdir/$stem"
+        fi
         ;;
       *-rpmlintrc)
 	# ignore rpmlintrc files
@@ -169,8 +179,11 @@ function copy_changed_package()
     local stem="$(basename "$F")"
     case "$stem" in
       *.tar.*|*.tar|*.tgz|*.tbz2|*.obscpio)
-        # tarball diff or rename not necessarily implies content change!
-        star="$sdir/$stem"
+        # Skip the files already in the target since we already diffed them
+        if [ ! -f "$tdir/$stem" ]; then
+          # tarball diff or rename not necessarily implies content change!
+          star="$sdir/$stem"
+        fi
         ;;
       *.obsinfo) break;;
       *)
