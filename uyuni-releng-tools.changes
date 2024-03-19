@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Tue Mar 19 18:01:15 CET 2024 - marina.latini@suse.com
+
+- version 0.0.2-0
+  * Use product version in Dockerfile and Charts.yaml
+  * Remove the container-related hacks in push and build scripts
+  * Handle pushes of packages with multiple archives
+  * Fix the path when pushing containers and helm charts to OBS
+  * Remove unneeded replaces from push-packages-to-obs
+
+-------------------------------------------------------------------
 Mon Nov 27 10:50:47 UTC 2023 - Cédric Bosdonnat <cbosdonnat@suse.com>
 
 - Initial packaging of uyuni-releng-tools 0.0.1

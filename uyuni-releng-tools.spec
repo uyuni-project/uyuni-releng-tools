@@ -7,8 +7,8 @@
 #
 
 Name:           uyuni-releng-tools
-Version:        0.0.1
-Release:        1
+Version:        0.0.2
+Release:        0
 Summary:        Tools helping Uyuni release engineers
 License:        Apache-2.0
 Group:          System/Management
