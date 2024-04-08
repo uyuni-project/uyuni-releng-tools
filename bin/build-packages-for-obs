@@ -177,7 +177,7 @@ EOF
   fi
   # Release is handled by the Buildservice
   # Remove everything what prevents us from submitting
-  sed -i 's/^Release.*$/Release:    1/i' $SRPM_DIR/$PKG_NAME/*.spec
+  sed -i 's/^Release.*$/Release:        0/i' $SRPM_DIR/$PKG_NAME/*.spec
 
   SUCCEED_CNT=$(($SUCCEED_CNT+1))
   break
