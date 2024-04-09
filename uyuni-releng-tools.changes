@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Apr 09 16:07:58 CEST 2024 - marina.latini@suse.com
+
+- version 0.0.4-0
+  * Do not hardcode a fixed release value but align it with the
+    value used while tagging
+
+-------------------------------------------------------------------
 Mon Apr 08 14:21:12 CEST 2024 - marina.latini@suse.com
 
 - version 0.0.3-0
