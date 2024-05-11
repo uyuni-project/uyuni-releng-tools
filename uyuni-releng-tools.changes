@@ -1,3 +1,5 @@
+- Add '-c|--commit' option to mkchlog for convenience
+
 -------------------------------------------------------------------
 Tue Apr 09 16:07:58 CEST 2024 - marina.latini@suse.com
 
