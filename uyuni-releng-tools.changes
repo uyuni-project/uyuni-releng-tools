@@ -1,4 +1,9 @@
-- Add '-c|--commit' option to mkchlog for convenience
+-------------------------------------------------------------------
+Mon Jun 03 13:51:48 CEST 2024 - marina.latini@suse.com
+
+- version 0.0.5-0
+  * Specify the oscrc file using --config instead of -c
+  * Add '-c|--commit' option to mkchlog for convenience
 
 -------------------------------------------------------------------
 Tue Apr 09 16:07:58 CEST 2024 - marina.latini@suse.com
