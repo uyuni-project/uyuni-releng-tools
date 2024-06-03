@@ -17,7 +17,7 @@ set -e
 #
 WORKSPACE=${WORKSPACE:-/tmp/push-packages-to-obs}
 PACKAGE="$@"
-OSCRC=${OSCRC:+-c $OSCRC}
+OSCRC=${OSCRC:+--config $OSCRC}
 OSCAPI=${OSCAPI:-https://api.suse.de}
 
 OSC="osc ${OSCRC} -A ${OSCAPI}"
@@ -36,7 +36,7 @@ FAKE_COMITTOBS=${FAKE_COMITTOBS:+1}
 KEEP_SRPMS=${KEEP_SRPMS:-FALSE}
 
 DIFF="diff -u"
-      
+
 GIT_DIR=$(git rev-parse --show-cdup)
 test -z "$GIT_DIR" || cd "$GIT_DIR"
 GIT_DIR=$(pwd)
@@ -327,7 +327,7 @@ while read PKG_NAME; do
           cd $OBS_TEST_PROJECT/$PKG_NAME/
           $OSC rm *
           cd -
-          cp -v * $OBS_TEST_PROJECT/$PKG_NAME  
+          cp -v * $OBS_TEST_PROJECT/$PKG_NAME
           cd $OBS_TEST_PROJECT/$PKG_NAME
           $OSC add *
           $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
