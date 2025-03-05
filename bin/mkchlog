@@ -111,7 +111,7 @@ if [ -z "$USER" ]; then
 fi
 
 if [ -z "$FEATURE" ]; then
-    FEATURE=`git rev-parse --abbrev-ref HEAD 2>/dev/null`
+    FEATURE=`git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-'`
     if [ -z "$FEATURE" ] || [ "HEAD" == "$FEATURE" ]; then
         echo "Cannot read the branch name from the current HEAD. Omitting the feature name part."
         unset FEATURE
