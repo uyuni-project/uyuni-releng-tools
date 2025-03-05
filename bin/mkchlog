@@ -33,18 +33,17 @@ EOF
 }
 
 # Out of the box macOS ships with BSD getopt which doesn't support long args
-if [ "$(uname -s)" == "Darwin" ] && $(man getopt | grep -i -q "bsd"); then
+if [ "$(uname -s)" == "Darwin" ] && (man getopt | grep -i -q "bsd"); then
     echo "Error: This tool requires GNU getopt, but your system is using BSD getopt. Please install GNU getopt and add it to your PATH."
     exit 1
 fi
 
-ARGS=$(getopt -n mkchlog -o rhncf:u: --long remove,help,no-wrap,commit,feature:username: -- "$@")
-if [ $? -ne 0 ]; then
+if ! ARGS=$(getopt -n mkchlog -o rhncf:u: --long remove,help,no-wrap,commit,feature:username: -- "$@"); then
     exit 1
 fi
 
 eval set -- "$ARGS"
-while [ : ]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help)
             usage
@@ -87,22 +86,22 @@ if [[ -z "$1" && -n "$COMMIT" ]]; then
     exit 1
 fi
 
-GITROOT=`git rev-parse --show-toplevel 2>/dev/null`
-if [ $? -ne 0 ]; then
+
+if ! GITROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
     echo "Error: not in a git repository."
     exit 1
 fi
 
-PKG_DIR=`ls -d $GITROOT/{.tito,rel-eng}/packages 2>/dev/null`
-if [ -z "$PKG_DIR" ]; then
+PKG_DIR=$(ls -d "$GITROOT"/{.tito,rel-eng}/packages 2>/dev/null)
+if [ -z "$PKG_DIR" ] ; then
     echo "Error: Not in Uyuni working directory."
     exit 1
 fi
 
-CURDIR=`git rev-parse --show-prefix` || exit 1
+CURDIR=$(git rev-parse --show-prefix) || exit 1
 
 if [ -z "$USER" ]; then
-    GITMAIL=`git config --get user.email 2>/dev/null`
+    GITMAIL=$(git config --get user.email 2>/dev/null)
     if [ -n "$GITMAIL" ]; then
         USER=${GITMAIL%@*}
     else
@@ -111,14 +110,14 @@ if [ -z "$USER" ]; then
 fi
 
 if [ -z "$FEATURE" ]; then
-    FEATURE=`git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-'`
+    FEATURE=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-')
     if [ -z "$FEATURE" ] || [ "HEAD" == "$FEATURE" ]; then
         echo "Cannot read the branch name from the current HEAD. Omitting the feature name part."
         unset FEATURE
     fi
 fi
 
-if [ -z $USER ] && [ -z $FEATURE ]; then
+if [ -z "$USER" ] && [ -z "$FEATURE" ]; then
     echo "Error: Neither username nor branch name could be read. Please specify the values using --feature and --username options or create a changelog file manually."
     exit 1
 fi
@@ -127,15 +126,18 @@ fi
 # Loops through the base directories of each package and tries to match one with the current directory.
 # Returns 1 if no match found, which means the user is outside of a package directory.
 function getChangelogFile() {
-    for pkg in $(cat $PKG_DIR/* | cut -d' ' -f2)
+    for pkg in $(cat "$PKG_DIR"/* | cut -d' ' -f2)
     do
         if [ "$pkg" = "./" ]; then
             pkg=""
         fi
 
-        if echo $CURDIR | grep -q "^$pkg"; then
-            local chfile=$(ls $GITROOT/$pkg*.changes)
-            echo $chfile${USER:+.$USER}${FEATURE:+.$FEATURE}
+        if echo "$CURDIR" | grep -q "^$pkg"; then
+            local chfile
+            
+            chfile=$(ls "$GITROOT"/"$pkg"*.changes)
+            echo "$chfile${USER:+.$USER}${FEATURE:+.$FEATURE}"
+
             return
         fi
     done
@@ -148,9 +150,9 @@ function getEditorCmd() {
     if [ -n "$EDITOR" ]; then
         cmd=$EDITOR
     elif command -v vim &>/dev/null; then
-        cmd=vim
+        cmd="vim"
     else
-        cmd=vi
+        cmd="vi"
     fi
 
     # Specific CLI options for common text editors
@@ -163,20 +165,19 @@ function getEditorCmd() {
             ;;
     esac
 
-    echo $cmd
+    echo "$cmd"
 }
 
-CHFILE=$(getChangelogFile)
-if [ $? -ne 0 ]; then
+if ! CHFILE=$(getChangelogFile); then
     echo "Error: Not in a package directory."
     exit 1
 fi
 
 # Remove option
-if ! [ -z $REMOVE ]; then
-    if [ -f $CHFILE ]; then
-        git restore --staged $CHFILE 2>/dev/null
-        rm $CHFILE 2>/dev/null
+if [ -n "$REMOVE" ]; then
+    if [ -f "$CHFILE" ]; then
+        git restore --staged "$CHFILE" 2>/dev/null
+        rm "$CHFILE" 2>/dev/null
         exit
     else
         echo "Error: '$CHFILE' does not exist."
@@ -185,31 +186,31 @@ if ! [ -z $REMOVE ]; then
 fi
 
 # Add the new entry
-if [ -z $NO_WRAP ]; then
-    echo "$1" | xargs | fold -s -w 65 | sed '1s/^\(.*\S\)\s*$/- \1/;2,$s/^\(.*\S\)\s*$/  \1/' > $CHFILE.new
+if [ -z "$NO_WRAP" ]; then
+    echo "$1" | xargs | fold -s -w 65 | sed '1s/^\(.*\S\)\s*$/- \1/;2,$s/^\(.*\S\)\s*$/  \1/' > "$CHFILE.new"
 else
-    echo "$1" | xargs | sed 's/^/- /' > $CHFILE.new
+    echo "$1" | xargs | sed 's/^/- /' > "$CHFILE.new"
 fi
 
 # Append older entries
-cat $CHFILE >> $CHFILE.new 2>/dev/null
+cat "$CHFILE" >> "$CHFILE.new" 2>/dev/null
 
 # Open file for edit
 if [ -z "$1" ]; then
-    $(getEditorCmd) $CHFILE.new
+    $(getEditorCmd) "$CHFILE.new"
 fi
 
 # Move file into place
-if [ -s $CHFILE.new ]; then
-    mv $CHFILE.new $CHFILE
+if [ -s "$CHFILE.new" ]; then
+    mv "$CHFILE.new" "$CHFILE"
     # Stage in git
-    git add $CHFILE
+    git add "$CHFILE"
     if [[ -n "$COMMIT" && -n "$1" ]]; then
         git commit -m "$1"
     fi
 else
     # Unstage and remove
     echo "No entries written. Discarding the changelog file."
-    git restore --staged $CHFILE 2>/dev/null
-    rm $CHFILE.new $CHFILE 2>/dev/null
+    git restore --staged "$CHFILE" 2>/dev/null
+    rm "$CHFILE.new" "$CHFILE" 2>/dev/null
 fi
