@@ -35,7 +35,9 @@ FAKE_COMITTOBS=${FAKE_COMITTOBS:+1}
 # projects in row
 KEEP_SRPMS=${KEEP_SRPMS:-FALSE}
 
-DIFF="diff -u"
+# keep the no-dereference option or
+# it could brake the diff of root.tar.gz with symlinks and empty folders
+DIFF="diff -u --no-dereference"
 
 GIT_DIR=$(git rev-parse --show-cdup)
 test -z "$GIT_DIR" || cd "$GIT_DIR"
