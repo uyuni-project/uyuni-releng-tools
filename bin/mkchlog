@@ -186,9 +186,9 @@ fi
 
 # Add the new entry
 if [ -z $NO_WRAP ]; then
-    echo "$1" | fold -s -w 65 | sed '1s/^.*$/- &/;2,$s/^.*$/  &/' > $CHFILE.new
+    echo "$1" | xargs | fold -s -w 65 | sed '1s/^\(.*\S\)\s*$/- \1/;2,$s/^\(.*\S\)\s*$/  \1/' > $CHFILE.new
 else
-    echo "- $1" > $CHFILE.new
+    echo "$1" | xargs | sed 's/^/- /' > $CHFILE.new
 fi
 
 # Append older entries

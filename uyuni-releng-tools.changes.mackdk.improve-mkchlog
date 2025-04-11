@@ -1,1 +1,2 @@
+- mkchlog: remove repeated and trailing spaces from the message
 - mkchlog: fix the feature name when the branch name contains a /
