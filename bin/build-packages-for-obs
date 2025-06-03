@@ -22,6 +22,8 @@ Usage: build-packages-for-obs.sh [PACKAGE]..
 Build package for submission to OBS from the current HEAD. Without argument
 all packages mentioned in .tito/packages or rel-eng/packages are processed.
 Package directories will be created in \$WORKSPACE/SRPMS/<package> ($WORKSPACE).
+
+To build tar archives instead of CPIO, set "NOCPIO" environment variable.
 EOF
   exit 0
 }
@@ -149,32 +151,37 @@ while read PKG_NAME PKG_VER PKG_DIR; do
     continue 2
   fi
 
-  # Convert to obscpio
-  SPEC_VER=$(sed -n -e 's/^Version:\s*\(.*\)/\1/p' ${T_DIR}/${PKG_NAME}.spec)
-  SOURCE=$(sed -n -e 's/^\(Source\|Source0\):\s*.*[[:space:]\/]\(.*\)/\2/p' ${T_DIR}/${PKG_NAME}.spec|sed -e "s/%{name}/${PKG_NAME}/"|sed -e "s/%{version}/${SPEC_VER}/")
-  SPEC_REL=$(sed -n -e 's/^Release: \+\([0-9]\).*/\1/p' ${T_DIR}/${PKG_NAME}.spec)
-  # If the package does not have sources, we don't need to repackage them
-  if [ "${SOURCE}" != "" ]; then
-    FOLDER=$(tar -tf ${T_DIR}/${SOURCE}|head -1|sed -e 's/\///')
-    (cd ${T_DIR}; tar -xf ${SOURCE}; rm ${SOURCE}; mv ${FOLDER} ${PKG_NAME}; find ${PKG_NAME} | cpio --create --format=newc --reproducible > ${FOLDER}.obscpio; rm -rf ${PKG_NAME})
-  fi
-  # Move to destination
-  mv "$T_DIR" "$SRPM_DIR/$PKG_NAME"
-  # If the package does not have sources, we don't need service or .obsinfo file
-  if [ "${SOURCE}" != "" ]; then
-    # Copy service
-    if [ -e "${BASE_DIR}/../_service" ]; then
-        cp ${BASE_DIR}/../_service "${SRPM_DIR}/${PKG_NAME}"
-    else
-        cp ${SHARE_DIR}/_service "${SRPM_DIR}/${PKG_NAME}"
+  if [ -n "$NOCPIO" ]; then
+    # Move to destination
+    mv "$T_DIR" "$SRPM_DIR/$PKG_NAME"
+  else
+    # Convert to obscpio
+    SPEC_VER=$(sed -n -e 's/^Version:\s*\(.*\)/\1/p' ${T_DIR}/${PKG_NAME}.spec)
+    SOURCE=$(sed -n -e 's/^\(Source\|Source0\):\s*.*[[:space:]\/]\(.*\)/\2/p' ${T_DIR}/${PKG_NAME}.spec|sed -e "s/%{name}/${PKG_NAME}/"|sed -e "s/%{version}/${SPEC_VER}/")
+    SPEC_REL=$(sed -n -e 's/^Release: \+\([0-9]\).*/\1/p' ${T_DIR}/${PKG_NAME}.spec)
+    # If the package does not have sources, we don't need to repackage them
+    if [ "${SOURCE}" != "" ]; then
+      FOLDER=$(tar -tf ${T_DIR}/${SOURCE}|head -1|sed -e 's/\///')
+      (cd ${T_DIR}; tar -xf ${SOURCE}; rm ${SOURCE}; mv ${FOLDER} ${PKG_NAME}; find ${PKG_NAME} | cpio --create --format=newc --reproducible > ${FOLDER}.obscpio; rm -rf ${PKG_NAME})
     fi
-    # Create .obsinfo file
-    cat > "${SRPM_DIR}/${PKG_NAME}/${PKG_NAME}.obsinfo" <<EOF
+    # Move to destination
+    mv "$T_DIR" "$SRPM_DIR/$PKG_NAME"
+    # If the package does not have sources, we don't need service or .obsinfo file
+    if [ "${SOURCE}" != "" ]; then
+      # Copy service
+      if [ -e "${BASE_DIR}/../_service" ]; then
+          cp ${BASE_DIR}/../_service "${SRPM_DIR}/${PKG_NAME}"
+      else
+          cp ${SHARE_DIR}/_service "${SRPM_DIR}/${PKG_NAME}"
+      fi
+      # Create .obsinfo file
+      cat > "${SRPM_DIR}/${PKG_NAME}/${PKG_NAME}.obsinfo" <<EOF
 name: ${PKG_NAME}
 version: $(echo ${FOLDER}|sed -e "s/${PKG_NAME}-//")
 mtime: $(date +%s)
 commit: $(git rev-parse --verify HEAD)
 EOF
+    fi
   fi
   # Release is handled by the Buildservice
   # With untagged changes we can only build using --test with tito build.
