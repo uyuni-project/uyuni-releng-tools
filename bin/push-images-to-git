@@ -1,0 +1,208 @@
+#! /bin/bash
+
+# SPDX-FileCopyrightText: 2025 SUSE LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+#
+# For all images prepared by build-packages-for-obs.sh in
+# $WORKSPACE/SRPMS/<package> prepare and submitt changed images
+# to one GIT repository.
+#
+# Use $OSCRC ot pass an osc configfile containing required credentials
+# (otherwise ~/.oscrc)
+#
+# srpm_package_defs() has a hardcoded list of packages excluded by default.
+#
+WORKSPACE=${WORKSPACE:-/tmp/push-packages-to-obs}
+PACKAGE="$@"
+
+GIT_ORG=${GIT_ORG:-galaxy}
+GIT_PRODUCT_REPO=${GIT_PRODUCT_REPO:-MLM-products}
+GIT_SRV=${GIT_SRV:-src.suse.de}
+GIT_USR=${GIT_USR:-gitea}
+
+NO_PUSH=${NO_PUSH:+1}
+
+# Set KEEP_SRPMS environment variable to TRUE if you want to keep your SRPMS
+# Useful if, for example, you are resubmitting the same set to several
+# projects in row
+KEEP_SRPMS=${KEEP_SRPMS:-FALSE}
+
+# BRANCH in upstream git and in internal gitea should be the same in the standard case
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+BRANCH=${BRANCH:-$GIT_BRANCH}
+
+GIT_CURR_HEAD=$(git rev-parse --short HEAD)
+
+## used for exec push.sh
+OSCAPI=${OSCAPI:-https://api.suse.de}
+GIT_DIR=$(git rev-parse --show-cdup)
+test -z "$GIT_DIR" || cd "$GIT_DIR"
+GIT_DIR=$(pwd)
+##
+
+grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
+  cat <<EOF
+Usage: push-images-to-obs.sh [IMAGE]..
+Submit changed images from \$WORKSPACE/SRPMS/<image> ($WORKSPACE)
+to GIT ($GIT_ORG). Without argument all images in SRPMS are processed.
+EOF
+  exit 0
+}
+
+function exists() {
+  [ -n "$1" -a -e "$1" ]
+}
+
+function srpm_package_defs() {
+  # - "PKG_NAME" from $SRPM_DIR, using a hardcoded blacklist
+  # of packages we do not submitt.
+  # - define $PACKAGE to build a specific set of packages.
+  # - usage:
+  #      while read PKG_NAME; do
+  #        ...
+  #      done < <(srpm_package_defs)
+  #
+  PACKAGE=$(find "$SRPM_DIR" -mindepth 1 -maxdepth 1 -type d -printf "%P\n")
+  for N in $PACKAGE; do
+    test -d "$SRPM_DIR/$N" || {
+      echo "No package dir '$SRPM_DIR/$N'" >&2
+      exit 99
+    }
+    test -e $SRPM_DIR/$N/Dockerfile && { echo "$N"; continue; }
+    test -e $SRPM_DIR/$N/Chart.yaml && { echo "$N"; continue; }
+    exists $SRPM_DIR/$N/*.kiwi && { echo "$N"; continue; }
+    echo "$N is not an image. Skipping..." >&2
+  done
+}
+
+# Here we have eveyfile (incl. .changes) in git, thus inside the tarball.
+# The tarballs rootdirs may differ, as they contain the revision number.
+# The specfile also contains the revision number. So do a quick check
+# for different .changes, then 'tardiff -p1'
+function copy_changed_package()
+{
+  local sdir="$1"
+  test -d "$sdir" || { echo "No source dir '$sdir'" >&2; return 2; }
+  local tdir="$2"
+  test -d "$tdir" || mkdir "$tdir" 
+
+  rm -rf "$tdir"/*
+  if [ ! -d "$tdir" ]; then
+    mkdir "$tdir"
+  fi
+  for F in "$sdir"/*; do
+    cp $F $tdir
+  done
+
+  pushd $tdir
+  diffs=$(git status --short | wc -l)
+  test $diffs -gt 0 && {
+    popd
+    return 0
+  } || {
+    git reset --hard
+    popd
+    return 1
+  }
+}
+
+function git_checkout_or_create() {
+        pushd $GIT_ORG
+        git clone $GIT_USR@$GIT_SRV:$GIT_ORG/$GIT_PRODUCT_REPO || { popd; exit 1; } #git_create
+        pushd $GIT_PRODUCT_REPO
+        git checkout $BRANCH || git checkout -b $BRANCH || { popd; popd; exit 1; }
+        popd
+        popd
+}
+
+
+function log_and_add_failure() {
+  test $# -ge 1 || { echo "log_and_add_failure: Wrong args $#: $@" >&2; return 1; }
+  local pkg_name="$1"
+  local opt_msg="$2"
+  FAILED_CNT=$(($FAILED_CNT+1))
+  FAILED_IMG="$FAILED_IMG$(echo -ne "\n    $pkg_name${opt_msg:+ ($opt_msg)}")"
+  echo "*** FAILED${opt_msg:+ ($opt_msg)} [$pkg_name]"
+}
+
+# go..
+cd "$WORKSPACE"
+T_LOG="$WORKSPACE/tmplog"
+trap "test -f \"$T_LOG\" && /bin/rm -rf -- \"$T_LOG\" " 0 1 2 3 13 15
+
+SRPM_DIR="SRPMS"
+test -d "$SRPM_DIR" || {
+  echo "No'$SRPM_DIR' dir to process." >&2
+  exit 99
+}
+rm -rf "$GIT_ORG"
+mkdir $GIT_ORG
+
+echo "Going to update $GIT_ORG from $SRPM_DIR..."
+UNCHANGED_CNT=0
+SUCCEED_CNT=0
+SUCCEED_IMG=
+FAILED_CNT=0
+FAILED_IMG=
+
+git_checkout_or_create
+
+while read PKG_NAME; do
+  echo "=== Processing image [$PKG_NAME]"
+
+  # prepare the srpm dir
+  SRPM_PKG_DIR="$SRPM_DIR/$PKG_NAME"
+  test -d "$SRPM_PKG_DIR" || {
+    log_and_add_failure "$PKG_NAME" "no srpm dir"
+    continue
+  }
+
+  # Is there is a push.sh script call it and remove it right after
+  if [ -f "${SRPM_PKG_DIR}/push.sh" ]; then
+    bash "${SRPM_PKG_DIR}/push.sh" ${OSCAPI} ${GIT_DIR} ${PKG_NAME}
+    rm "${SRPM_PKG_DIR}/push.sh"
+  fi
+
+  GIT_IMG_DIR="$GIT_ORG/$GIT_PRODUCT_REPO/${PKG_NAME}"
+  if copy_changed_package "$SRPM_PKG_DIR" "$GIT_IMG_DIR"; then
+    echo "Package has changed, updating..."
+    (
+      set -e
+      cd "$GIT_ORG/$GIT_PRODUCT_REPO"
+      git add -A .    # $OSC addremove >/dev/null
+      git status   # $OSC status
+      git commit -m "Git submit ${PKG_NAME} $GIT_BRANCH($GIT_CURR_HEAD)" # $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
+    ) || {
+      log_and_add_failure "$PKG_NAME" "${NO_PUSH:+fake }checkin"
+      continue
+    }
+    SUCCEED_CNT=$(($SUCCEED_CNT+1))
+    SUCCEED_IMG="$SUCCEED_IMG$(echo -ne "\n    $PKG_NAME")"
+  else
+    echo "Image is unchanged."
+    UNCHANGED_CNT=$(($UNCHANGED_CNT+1))
+  fi
+  if [ "${KEEP_SRPMS}" == "FALSE" ]; then
+    rm -rf "$SRPM_PKG_DIR"
+  fi
+done < <(srpm_package_defs)
+
+if [ -z "$NO_PUSH" ]; then
+  git push origin HEAD
+else
+  echo "FAKE: Not pushing to GIT..."
+fi
+
+
+echo "======================================================================"
+echo "Unchanged images: $UNCHANGED_CNT"
+echo "Updated images:   $SUCCEED_CNT$SUCCEED_IMG"
+test $FAILED_CNT != 0 && {
+  echo "Failed images:    $FAILED_CNT$FAILED_IMG"
+}
+echo "======================================================================"
+
+exit $FAILED_CNT
