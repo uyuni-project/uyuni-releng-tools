@@ -10,8 +10,9 @@ set -e
 # $WORKSPACE/SRPMS/<package> prepare and submit changed packages
 # to OBS.
 #
-# Use $OSCRC to pass an osc configfile containing required credentials
-# (otherwise ~/.oscrc)
+# To execute push.sh you may need OSC access with credentials
+# Use $OSCRC ot pass an osc configfile containing required credentials
+# (otherwise ~/.config/oscrc)
 #
 # srpm_package_defs() has a hardcoded list of packages excluded by default.
 #
@@ -47,6 +48,16 @@ grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
 Usage: push-packages-to-obs.sh [PACKAGE]..
 Submit changed packages from \$WORKSPACE/SRPMS/<package> ($WORKSPACE)
 to GIT ($GIT_ORG). Without argument all packages in SRPMS are processed.
+
+This script add the packages to its own git repo.
+
+Optionally you can provide the following environment valiables:
+GIT_ORG: The git organization (Default: galaxy)
+GIT_SRV: The git server (Default: src.suse.de)
+BRANCH:  The git default branch where to submit to (Default: the current branch you are in)
+
+NO_PUSH: Specify when you do not want to push but check what commits were created
+
 EOF
   exit 0
 }

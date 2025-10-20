@@ -7,11 +7,12 @@
 set -e
 #
 # For all images prepared by build-packages-for-obs.sh in
-# $WORKSPACE/SRPMS/<package> prepare and submitt changed images
+# $WORKSPACE/SRPMS/<package> prepare and submit changed images
 # to one GIT repository.
 #
+# To exec push.sh you may need OSC access with credentials
 # Use $OSCRC ot pass an osc configfile containing required credentials
-# (otherwise ~/.oscrc)
+# (otherwise ~/.config/oscrc)
 #
 # srpm_package_defs() has a hardcoded list of packages excluded by default.
 #
@@ -48,6 +49,17 @@ grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
 Usage: push-images-to-obs.sh [IMAGE]..
 Submit changed images from \$WORKSPACE/SRPMS/<image> ($WORKSPACE)
 to GIT ($GIT_ORG). Without argument all images in SRPMS are processed.
+
+This script add all images to 1 git repo in a sub directory.
+
+Optionally you can provide the following environment valiables:
+GIT_ORG: The git organization (Default: galaxy)
+GIT_SRV: The git server (Default: src.suse.de)
+GIT_PRODUCT_REPO: The git repository name (Default: MLM-products)
+BRANCH: The git default branch where to submit to (Default: the current branch you are in)
+
+NO_PUSH: Specify when you do not want to push but check what commits were created
+
 EOF
   exit 0
 }
