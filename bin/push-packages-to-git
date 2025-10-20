@@ -1,16 +1,16 @@
 #! /bin/bash
 
-# SPDX-FileCopyrightText: 2025 SUSE LLC
+# SPDX-FileCopyrightText: 2025 SUSE LLC and contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
 set -e
 #
 # For all packages prepared by build-packages-for-obs.sh in
-# $WORKSPACE/SRPMS/<package> prepare and submitt changed packages
+# $WORKSPACE/SRPMS/<package> prepare and submit changed packages
 # to OBS.
 #
-# Use $OSCRC ot pass an osc configfile containing required credentials
+# Use $OSCRC to pass an osc configfile containing required credentials
 # (otherwise ~/.oscrc)
 #
 # srpm_package_defs() has a hardcoded list of packages excluded by default.
@@ -78,7 +78,7 @@ function srpm_package_defs() {
   done
 }
 
-# Here we have eveyfile (incl. .changes) in git, thus inside the tarball.
+# Here we have every file (incl. .changes) in git, thus inside the tarball.
 # The tarballs rootdirs may differ, as they contain the revision number.
 # The specfile also contains the revision number. So do a quick check
 # for different .changes, then 'tardiff -p1'
@@ -204,7 +204,7 @@ while read PKG_NAME; do
     continue
   }
 
-  # Is there is a push.sh script call it and remove it right after
+  # If there is a push.sh script call it and remove it right after
   if [ -f "${SRPM_PKG_DIR}/push.sh" ]; then
     bash "${SRPM_PKG_DIR}/push.sh" ${OSCAPI} ${GIT_DIR} ${PKG_NAME}
     rm "${SRPM_PKG_DIR}/push.sh"

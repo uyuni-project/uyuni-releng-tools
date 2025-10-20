@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# SPDX-FileCopyrightText: 2025 SUSE LLC
+# SPDX-FileCopyrightText: 2025 SUSE LLC and contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -52,7 +52,7 @@ arguments.
 You have to specify a "TOKEN" via environment variable to access the gitea API.
 
 Optionally you can provide the following environment valiables:
-GIT_ORG: The git organization (Default: Galaxy
+GIT_ORG: The git organization (Default: Galaxy)
 GIT_SRV: The git server (Default: src.suse.de)
 GIT_BRANCH: The git default branch which should be initialized (Default: mlm-5.2)
 EOF
