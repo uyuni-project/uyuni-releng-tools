@@ -36,7 +36,7 @@ function git_clone() {
 function git_initialize() {
         local REPO="$1"
 	pushd $REPO
-	obs-git-init . || { popd; return 2; }
+	/usr/bin/obs-git-init . || { popd; return 2; }
 	git commit -m initialize || { popd; return 1; }
 	git push origin HEAD:$GIT_BRANCH || { popd; return 1; }
 	popd
@@ -63,6 +63,11 @@ grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || usage
 
 if [ -z "${GIT_REPOS}" ]; then
 	usage
+fi
+
+if [ ! -x /usr/bin/obs-git-init ]; then
+	echo "Please install 'obs-git-init'. Aborting" >&2
+	exit 1
 fi
 
 for RNAME in ${GIT_REPOS}; do
