@@ -1,0 +1,87 @@
+#! /bin/bash
+
+# SPDX-FileCopyrightText: 2025 SUSE LLC and contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+
+OTOKEN=${TOKEN}
+GIT_ORG=${GIT_ORG:-Galaxy}
+GIT_SRV=${GIT_SRV:-src.suse.de}
+GIT_REPOS=$@
+GIT_BRANCH=${GIT_BRANCH:-mlm-5.2}
+GIT_USR="gitea"
+
+function git_create() {
+        local REPO="$1"
+
+	curl --fail-with-body -X POST -H "Authorization: token $OTOKEN" \
+         -H 'content-type: application/json' \
+         --data "{\"name\":\"${REPO//+/_}\", \"object_format_name\":\"sha256\", \"default_branch\":\"${GIT_BRANCH}\"}" \
+         "https://$GIT_SRV/api/v1/orgs/$GIT_ORG/repos" || return 1
+	#curl -X POST -H "Authorization: token $OTOKEN" \
+        # -H 'content-type: application/json' \
+        # --data "{\"name\":\"${PKG_NAME//+/_}\", \"object_format_name\":\"sha256\"}}" \
+        # "https://$GIT_SRV/api/v1/user/repos"
+	return 0
+}
+
+function git_clone() {
+        local REPO="$1"
+	git clone $GIT_USR@$GIT_SRV:$GIT_ORG/$REPO || return 1
+	return 0
+}
+
+function git_initialize() {
+        local REPO="$1"
+	pushd $REPO
+	/usr/bin/obs-git-init . || { popd; return 2; }
+	git commit -m initialize || { popd; return 1; }
+	git push origin HEAD:$GIT_BRANCH || { popd; return 1; }
+	popd
+	return 0
+}
+
+function usage() {
+	cat <<EOF
+Usage: create-gitea-repos REPONAME [REPONAME...]
+
+Create one or multiple git repos in gitea with the given names provided as
+arguments.
+You have to specify a "TOKEN" via environment variable to access the gitea API.
+
+Optionally you can provide the following environment valiables:
+GIT_ORG: The git organization (Default: Galaxy)
+GIT_SRV: The git server (Default: src.suse.de)
+GIT_BRANCH: The git default branch which should be initialized (Default: mlm-5.2)
+EOF
+	exit 1 
+}
+
+grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || usage
+
+if [ -z "${GIT_REPOS}" ]; then
+	usage
+fi
+
+if [ ! -x /usr/bin/obs-git-init ]; then
+	echo "Please install 'obs-git-init'. Aborting" >&2
+	exit 1
+fi
+
+for RNAME in ${GIT_REPOS}; do
+	if [ -d $RNAME ]; then
+		echo "Directory $RNAME already exists. Skipping..."
+		continue
+	fi
+        git_create $RNAME
+	NEW_CREATED=$?
+	git_clone $RNAME
+	if [ $NEW_CREATED -eq 0 ]; then
+	        git_initialize $RNAME
+	else
+		echo "Git Repo $RNAME is already initialized"
+	fi
+done
+

@@ -1,0 +1,265 @@
+#! /bin/bash
+
+# SPDX-FileCopyrightText: 2025 SUSE LLC and contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+#
+# For all packages prepared by build-packages-for-obs.sh in
+# $WORKSPACE/SRPMS/<package> prepare and submit changed packages
+# to OBS.
+#
+# To execute push.sh you may need OSC access with credentials
+# Use $OSCRC ot pass an osc configfile containing required credentials
+# (otherwise ~/.config/oscrc)
+#
+# srpm_package_defs() has a hardcoded list of packages excluded by default.
+#
+WORKSPACE=${WORKSPACE:-/tmp/push-packages-to-obs}
+PACKAGE="$@"
+
+GIT_ORG=${GIT_ORG:-galaxy}
+GIT_SRV=${GIT_SRV:-src.suse.de}
+GIT_USR=${GIT_USR:-gitea}
+
+NO_PUSH=${NO_PUSH:+1}
+
+# Set KEEP_SRPMS environment variable to TRUE if you want to keep your SRPMS
+# Useful if, for example, you are resubmitting the same set to several
+# projects in row
+KEEP_SRPMS=${KEEP_SRPMS:-FALSE}
+
+# BRANCH in upstream git and in internal gitea should be the same in the standard case
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+BRANCH=${BRANCH:-$GIT_BRANCH}
+
+GIT_CURR_HEAD=$(git rev-parse --short HEAD)
+
+## used for exec push.sh
+OSCAPI=${OSCAPI:-https://api.suse.de}
+GIT_DIR=$(git rev-parse --show-cdup)
+test -z "$GIT_DIR" || cd "$GIT_DIR"
+GIT_DIR=$(pwd)
+##
+
+grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
+  cat <<EOF
+Usage: push-packages-to-obs.sh [PACKAGE]..
+Submit changed packages from \$WORKSPACE/SRPMS/<package> ($WORKSPACE)
+to GIT ($GIT_ORG). Without argument all packages in SRPMS are processed.
+
+This script add the packages to its own git repo.
+
+Optionally you can provide the following environment valiables:
+GIT_ORG: The git organization (Default: galaxy)
+GIT_SRV: The git server (Default: src.suse.de)
+BRANCH:  The git default branch where to submit to (Default: the current branch you are in)
+
+NO_PUSH: Specify when you do not want to push but check what commits were created
+
+EOF
+  exit 0
+}
+
+function exists() {
+  [ -n "$1" -a -e "$1" ]
+}
+
+function srpm_package_defs() {
+  # - "PKG_NAME" from $SRPM_DIR, using a hardcoded blacklist
+  # of packages we do not submitt.
+  # - define $PACKAGE to build a specific set of packages.
+  # - usage:
+  #      while read PKG_NAME; do
+  #        ...
+  #      done < <(srpm_package_defs)
+  #
+  PACKAGE=$(find "$SRPM_DIR" -mindepth 1 -maxdepth 1 -type d -printf "%P\n")
+  for N in $PACKAGE; do
+    test -d "$SRPM_DIR/$N" || {
+      echo "No package dir '$SRPM_DIR/$N'" >&2
+      exit 99
+    }
+    test -e $SRPM_DIR/$N/Dockerfile && { echo "$N is not an image. Skipping..." >&2; continue; }
+    test -e $SRPM_DIR/$N/Chart.yaml && { echo "$N is not an image. Skipping..." >&2; continue; }
+    exists $SRPM_DIR/$N/*.kiwi && { echo "$N is not an image. Skipping..." >&2; continue; }
+    # we cannot check for a spec file as images have also a spec
+    echo "$N"
+  done
+}
+
+# Here we have every file (incl. .changes) in git, thus inside the tarball.
+# The tarballs rootdirs may differ, as they contain the revision number.
+# The specfile also contains the revision number. So do a quick check
+# for different .changes, then 'tardiff -p1'
+function copy_changed_package()
+{
+  local sdir="$1"
+  test -d "$sdir" || { echo "No source dir '$sdir'" >&2; return 2; }
+  local tdir="$2"
+  test -d "$tdir" || { echo "No target dir '$tdir'" >&2; return 2; }
+  local pkgname="$3"
+  test -n "$pkgname" || { echo "No package name" >&2; return 2; }
+
+
+  rm -rf "$tdir"/*
+  HAVE_CPIO=0
+  for F in "$sdir"/*; do
+    local stem="$(basename "$F")"
+    case "$stem" in
+      *.obscpio)
+        HAVE_CPIO=1
+        if [[ "$stem" =~ ^${pkgname}.*$ ]]; then
+          pushd $tdir
+          mkdir ${pkgname}
+	  cpio -id < "$WORKSPACE/$F"
+          popd
+        else
+          # extract vendor.tar.gz in vendor/ and node_module.tar.gz in node_modules/
+          sdirname=${stem/.*/}
+          pushd $tdir
+          mkdir ${sdirname}
+	  cpio -id < "$WORKSPACE/$F"
+          popd
+        fi
+        ;;
+      *.tar.*|*.tar|*.tgz|*.tbz2)
+        if [[ "$stem" =~ ^${pkgname}.*$ ]]; then
+          pushd $tdir
+          mkdir ${pkgname}
+          tar -x --strip-components=1 -f $WORKSPACE/$F -C ${pkgname}
+          popd
+        else
+          # extract vendor.tar.gz in vendor/ and node_module.tar.gz in node_modules/
+          sdirname=${stem/.*/}
+          pushd $tdir
+          mkdir ${sdirname}
+          tar -x --strip-components=1 -f $WORKSPACE/$F -C ${sdirname}
+          popd
+        fi
+        ;;
+      *.obsinfo) continue;;
+      *)
+        cp $F $tdir
+        ;;
+    esac
+  done
+
+  pushd $tdir
+  if [ $HAVE_CPIO -eq 1 ]; then
+    # service to extract CPIO and create a tar. We do not need it
+    rm -f _service
+  fi
+  diffs=$(git status --short | wc -l)
+  test $diffs -gt 0 && {
+    popd
+    return 0
+  } || {
+    git reset --hard
+    popd
+    return 1
+  }
+}
+
+function git_checkout_or_create() {
+        pushd $GIT_ORG
+        git clone $GIT_USR@$GIT_SRV:$GIT_ORG/$PKG_NAME || {
+          log_and_add_failure $PKG_NAME "Repository does not exist. Please create it."
+          popd
+          exit 1
+        }
+        pushd $PKG_NAME
+        git checkout $BRANCH || git checkout -b $BRANCH || { popd; popd; exit 1; }
+        popd
+        popd
+}
+
+
+function log_and_add_failure() {
+  test $# -ge 1 || { echo "log_and_add_failure: Wrong args $#: $@" >&2; return 1; }
+  local pkg_name="$1"
+  local opt_msg="$2"
+  FAILED_CNT=$(($FAILED_CNT+1))
+  FAILED_PKG="$FAILED_PKG$(echo -ne "\n    $pkg_name${opt_msg:+ ($opt_msg)}")"
+  echo "*** FAILED${opt_msg:+ ($opt_msg)} [$pkg_name]"
+}
+
+# go..
+cd "$WORKSPACE"
+T_LOG="$WORKSPACE/tmplog"
+trap "test -f \"$T_LOG\" && /bin/rm -rf -- \"$T_LOG\" " 0 1 2 3 13 15
+
+SRPM_DIR="SRPMS"
+test -d "$SRPM_DIR" || {
+  echo "No'$SRPM_DIR' dir to process." >&2
+  exit 99
+}
+rm -rf "$GIT_ORG"
+mkdir $GIT_ORG
+
+echo "Going to update $GIT_ORG from $SRPM_DIR..."
+UNCHANGED_CNT=0
+SUCCEED_CNT=0
+SUCCEED_PKG=
+FAILED_CNT=0
+FAILED_PKG=
+
+while read PKG_NAME; do
+  echo "=== Processing package [$PKG_NAME]"
+
+  # prepare the srpm dir
+  SRPM_PKG_DIR="$SRPM_DIR/$PKG_NAME"
+  test -d "$SRPM_PKG_DIR" || {
+    log_and_add_failure "$PKG_NAME" "no srpm dir"
+    continue
+  }
+
+  # If there is a push.sh script call it and remove it right after
+  if [ -f "${SRPM_PKG_DIR}/push.sh" ]; then
+    bash "${SRPM_PKG_DIR}/push.sh" ${OSCAPI} ${GIT_DIR} ${PKG_NAME}
+    rm "${SRPM_PKG_DIR}/push.sh"
+  fi
+
+  GIT_PKG_DIR="$GIT_ORG/$PKG_NAME"
+  rm -rf "$GIT_PKG_DIR"
+  git_checkout_or_create
+
+  if copy_changed_package "$SRPM_PKG_DIR" "$GIT_PKG_DIR" "${PKG_NAME}"; then
+    echo "Package has changed, updating..."
+    (
+      set -e
+      cd "$GIT_PKG_DIR"
+      git add -A .    # $OSC addremove >/dev/null
+      git status   # $OSC status
+      git commit -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)" # $OSC ci -m "Git submit $GIT_BRANCH($GIT_CURR_HEAD)"
+      if [ -z "$NO_PUSH" ]; then
+        git push origin HEAD
+      else
+        echo "FAKE: Not pushing to GIT..."
+        false
+      fi
+    ) || {
+      log_and_add_failure "$PKG_NAME" "${NO_PUSH:+fake }checkin"
+      continue
+    }
+    SUCCEED_CNT=$(($SUCCEED_CNT+1))
+    SUCCEED_PKG="$SUCCEED_PKG$(echo -ne "\n    $PKG_NAME")"
+  else
+    echo "Package is unchanged."
+    UNCHANGED_CNT=$(($UNCHANGED_CNT+1))
+  fi
+  if [ "${KEEP_SRPMS}" == "FALSE" ]; then
+    rm -rf "$SRPM_PKG_DIR"
+  fi
+done < <(srpm_package_defs)
+
+echo "======================================================================"
+echo "Unchanged packages: $UNCHANGED_CNT"
+echo "Updated packages:   $SUCCEED_CNT$SUCCEED_PKG"
+test $FAILED_CNT != 0 && {
+  echo "Failed packages:    $FAILED_CNT$FAILED_PKG"
+}
+echo "======================================================================"
+
+exit $FAILED_CNT
