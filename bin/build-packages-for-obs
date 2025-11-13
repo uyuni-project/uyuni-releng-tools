@@ -151,6 +151,7 @@ while read PKG_NAME PKG_VER PKG_DIR; do
     continue 2
   fi
 
+  SPEC_REL=$(sed -n -e 's/^Release: \+\([0-9]\).*/\1/p' ${T_DIR}/${PKG_NAME}.spec)
   if [ -n "$NOCPIO" ]; then
     # Move to destination
     mv "$T_DIR" "$SRPM_DIR/$PKG_NAME"
@@ -158,7 +159,6 @@ while read PKG_NAME PKG_VER PKG_DIR; do
     # Convert to obscpio
     SPEC_VER=$(sed -n -e 's/^Version:\s*\(.*\)/\1/p' ${T_DIR}/${PKG_NAME}.spec)
     SOURCE=$(sed -n -e 's/^\(Source\|Source0\):\s*.*[[:space:]\/]\(.*\)/\2/p' ${T_DIR}/${PKG_NAME}.spec|sed -e "s/%{name}/${PKG_NAME}/"|sed -e "s/%{version}/${SPEC_VER}/")
-    SPEC_REL=$(sed -n -e 's/^Release: \+\([0-9]\).*/\1/p' ${T_DIR}/${PKG_NAME}.spec)
     # If the package does not have sources, we don't need to repackage them
     if [ "${SOURCE}" != "" ]; then
       FOLDER=$(tar -tf ${T_DIR}/${SOURCE}|head -1|sed -e 's/\///')
