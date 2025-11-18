@@ -20,7 +20,7 @@ WORKSPACE=${WORKSPACE:-/tmp/push-packages-to-obs}
 PACKAGE="$@"
 
 GIT_ORG=${GIT_ORG:-galaxy}
-GIT_PRODUCT_REPO=${GIT_PRODUCT_REPO:-MLM-products}
+GIT_PRODUCT_REPO=${GIT_PRODUCT_REPO:-SUSE_Multi-Linux_Manager}
 GIT_SRV=${GIT_SRV:-src.suse.de}
 GIT_USR=${GIT_USR:-gitea}
 
@@ -55,7 +55,7 @@ This script add all images to 1 git repo in a sub directory.
 Optionally you can provide the following environment valiables:
 GIT_ORG: The git organization (Default: galaxy)
 GIT_SRV: The git server (Default: src.suse.de)
-GIT_PRODUCT_REPO: The git repository name (Default: MLM-products)
+GIT_PRODUCT_REPO: The git repository name (Default: SUSE_Multi-Linux_Manager)
 BRANCH: The git default branch where to submit to (Default: the current branch you are in)
 
 NO_PUSH: Specify when you do not want to push but check what commits were created
