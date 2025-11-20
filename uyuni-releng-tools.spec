@@ -18,6 +18,7 @@ BuildArch:      noarch
 Requires:       build
 Requires:       cpio
 Requires:       git-core
+Requires:       git-lfs
 Requires:       osc
 Requires:       tito
 
