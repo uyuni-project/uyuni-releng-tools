@@ -202,7 +202,8 @@ while read PKG_NAME; do
   fi
 done < <(srpm_package_defs)
 
-if [ -z "$NO_PUSH" ]; then
+if [ -z "$NO_PUSH" -a $SUCCEED_CNT -gt 0 ]; then
+  cd "$GIT_ORG/$GIT_PRODUCT_REPO"
   git push origin HEAD
 else
   echo "FAKE: Not pushing to GIT..."
