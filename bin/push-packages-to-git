@@ -81,9 +81,9 @@ function srpm_package_defs() {
       echo "No package dir '$SRPM_DIR/$N'" >&2
       exit 99
     }
-    test -e $SRPM_DIR/$N/Dockerfile && { echo "$N is not an image. Skipping..." >&2; continue; }
-    test -e $SRPM_DIR/$N/Chart.yaml && { echo "$N is not an image. Skipping..." >&2; continue; }
-    exists $SRPM_DIR/$N/*.kiwi && { echo "$N is not an image. Skipping..." >&2; continue; }
+    test -e $SRPM_DIR/$N/Dockerfile && { echo "$N is not a package. Skipping..." >&2; continue; }
+    test -e $SRPM_DIR/$N/Chart.yaml && { echo "$N is not a package. Skipping..." >&2; continue; }
+    exists $SRPM_DIR/$N/*.kiwi && { echo "$N is not a package. Skipping..." >&2; continue; }
     # we cannot check for a spec file as images have also a spec
     echo "$N"
   done
