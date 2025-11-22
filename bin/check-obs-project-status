@@ -1,0 +1,106 @@
+#! /bin/bash
+#
+# SPDX-FileCopyrightText: 2025 SUSE LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+OSCAPI=${OSCAPI:-https://api.opensuse.org}
+OBS_PRJS_URL=${OBS_PRJS_URL:-https://build.opensuse.org/project/show}
+OSCCNF=${OSCCNF:-$HOME/.oscrc}
+
+OSC="/usr/bin/osc -A $OSCAPI --config $OSCCNF"
+if [ "${BUILD_SERVICE_HEADERS}" == "true" ]; then
+  OSC="${OSC} -H"
+fi
+
+FAILED="false"
+DEF_PROJS="systemsmanagement:Uyuni:Master:Docker \
+           systemsmanagement:Uyuni:Master \
+           systemsmanagement:Uyuni:Master:Other|openSUSE_Leap_15.5,openSUSE_Leap_15.6 \
+           systemsmanagement:Uyuni:Master:ContainerUtils \
+           systemsmanagement:Uyuni:Master:openSUSE_Leap_15-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:openSUSE_Leap_15-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:Tumbleweed-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:Tumbleweed-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:SLMicro6-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:SLMicro6-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:SLE12-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:SLE12-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:SLE15-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:SLE15-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:CentOS7-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:CentOS7-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:EL8-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:EL8-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:EL9-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:EL9-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:EL10-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:EL10-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:Ubuntu2004-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:Ubuntu2004-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:Ubuntu2204-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:Ubuntu2204-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:Ubuntu2404-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:Ubuntu2404-Uyuni-Client-Tools:Build-Dependencies \
+           systemsmanagement:Uyuni:Master:Debian12-Uyuni-Client-Tools \
+           systemsmanagement:Uyuni:Master:Debian12-Uyuni-Client-Tools:Build-Dependencies"
+
+if [ -z "$OBS_PROJS" ]; then
+  # by default check uyuni
+  OBS_PROJS=$DEF_PROJS
+fi
+
+check_projects() {
+  local FLAG=$1
+  local STAT_STR="$2"
+
+  for PRJ in ${OBS_PROJS}; do
+    REPOS=$(echo ${PRJ}|cut -s -d '|' -f 2)
+    PRJ=$(echo ${PRJ}|cut -d '|' -f 1)
+    if [ "${REPOS}" == "" ]; then
+      INFOREPOS="all"
+    else
+      INFOREPOS="${REPOS}"
+    fi
+    echo "*** Looking for $STAT_STR builds at ${OBS_PRJS_URL}/${PRJ} (${INFOREPOS})..."
+    if [ "${REPOS}" != ""  ]; then
+      REPOS="--repo=$(echo ${REPOS}|sed 's/,/ --repo=/g')"
+    fi
+    LOG=$(${OSC} pr ${REPOS} -s "$FLAG" ${PRJ} | awk '{print}END{exit NR>1}') || {
+      echo -e "${LOG}"
+      if [ "$FLAG" == "F" ]; then
+        echo "Failures: trigger rebuild"
+        ${OSC} rebuild -f ${PRJ}
+      else
+        echo "Failures"
+      fi
+      FAILED="true"
+    }
+  done
+}
+
+if [ "$1" = "-h" -o "$1" = "--help" ]; then
+  echo "Usage $0: "
+  echo ""
+  echo "Check the status of OBS projects for failed, unresolvable or broken packages."
+  echo "By default it check Uyuni repositories in build.opensuse.org"
+  echo ""
+  echo "The following environment variables can be set to configure the behavior:"
+  echo "OSCAPI (Default: https://api.opensuse.org)"
+  echo 'OSCCNF (Default: $HOME/.oscrc)'
+  echo "OBS_PRJS_URL (Default: https://build.opensuse.org/project/show)"
+  echo "OBS_PROJS: The projects to check. Seperated by space."
+  echo "           (Default: systemsmanagement:Uyuni:Master systemsmanagement:Uyuni:Master:Other ...)"
+  exit 0
+fi
+
+check_projects "F" "failed"
+check_projects "U" "unresolvable"
+check_projects "B" "broken"
+
+if [ "${FAILED}" == "true" ]; then
+  echo "ERROR: At least one package had problems. Check the log!"
+  exit 1
+else
+  exit 0
+fi
