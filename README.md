@@ -45,4 +45,18 @@ The default editor can be specified by setting the EDITOR environment variable.
 
 The script `build-packages-for-obs` is used together with `push-packages-to-obs` for building a source from git and pushing it to a project on the Open Build Service and build it there.
 
-A comprehensive how-to is available at the following wiki page [Building-an-RPM-in-an-OBS-branch-package](https://github.com/uyuni-project/uyuni/wiki/Building-an-RPM-in-an-OBS-branch-package) 
+A comprehensive how-to is available at the following wiki page [Building-an-RPM-in-an-OBS-branch-package](https://github.com/uyuni-project/uyuni/wiki/Building-an-RPM-in-an-OBS-branch-package)
+
+## check-obs-project-status
+
+The script `check-obs-project-status` is used to verify that all packages, products, containers and images are successfully building in the given projects.
+By default it check Uyuni repositories in build.opensuse.org
+
+The following environment variables can be set to configure the behavior:
+~~~
+OSCAPI       (Default: https://api.opensuse.org)
+OSCCNF       (Default: $HOME/.oscrc)
+OBS_PRJS_URL (Default: https://build.opensuse.org/project/show)
+OBS_PROJS    The projects to check. Seperated by space.
+             (Default: systemsmanagement:Uyuni:Master systemsmanagement:Uyuni:Master:Other ...)
+~~~
