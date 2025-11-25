@@ -10,7 +10,7 @@ OTOKEN=${TOKEN}
 GIT_ORG=${GIT_ORG:-Galaxy}
 GIT_SRV=${GIT_SRV:-src.suse.de}
 GIT_REPOS=$@
-GIT_BRANCH=${GIT_BRANCH:-mlm-5.2}
+GIT_BRANCH=${GIT_BRANCH:-mlm-main}
 GIT_USR="gitea"
 
 function git_create() {
@@ -54,20 +54,29 @@ You have to specify a "TOKEN" via environment variable to access the gitea API.
 Optionally you can provide the following environment valiables:
 GIT_ORG: The git organization (Default: Galaxy)
 GIT_SRV: The git server (Default: src.suse.de)
-GIT_BRANCH: The git default branch which should be initialized (Default: mlm-5.2)
+GIT_BRANCH: The git default branch which should be initialized (Default: mlm-main)
 EOF
 	exit 1 
 }
 
-grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || usage
+grep -v -- "\(--help\|-h\|-?\)\>" >/dev/null <<<"$@" || usage
 
 if [ -z "${GIT_REPOS}" ]; then
 	usage
 fi
 
 if [ ! -x /usr/bin/obs-git-init ]; then
-	echo "Please install 'obs-git-init'. Aborting" >&2
+	echo ""
+	echo "    Please install 'obs-git-init'. Aborting" >&2
+	echo ""
 	exit 1
+fi
+
+if [ -z "$OTOKEN" ]; then
+	echo ""
+	echo "    Please specify TOKEN environment variable. Aborting" >&2
+	echo ""
+	usage
 fi
 
 for RNAME in ${GIT_REPOS}; do
