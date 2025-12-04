@@ -60,3 +60,21 @@ OBS_PRJS_URL (Default: https://build.opensuse.org/project/show)
 OBS_PROJS    The projects to check. Seperated by space.
              (Default: systemsmanagement:Uyuni:Master systemsmanagement:Uyuni:Master:Other ...)
 ~~~
+
+## obs_subproject_creator.py
+
+The script  `obs_subproject_creator.py` is used for generating an OBS/IBS subproject.
+
+This script is an interactive command-line utility designed to streamline the creation of new
+subprojects within the Open Build Service (OBS). It communicates with the OBS API endpoints
+by leveraging the official **'osc' command** for all authenticated network operations.
+
+Key Features:
+
+* Secure and native authentication: Relies entirely on the system's 'osc' configuration.
+* Intelligent Defaults: Suggests API URLs (e.g., api.opensuse.org) and template projects based on the target API endpoint.
+* Input Validation: Strictly validates Project names, User IDs, and Group IDs against the API before proceeding.
+* Template Merging: Supports cloning meta-data from a project template, allowing the user to selectively import Roles, Repositories, Release Targets, and Build Tags.
+* Dynamic Repositories: Enables defining multi-path repositories and automatically discovers the available architecture list from the specified source repository/path.
+* Consolidated Role Input: Streamlines the process of assigning multiple roles (Maintainer/Reviewer) to users or groups.
+* Post-Creation Action: Offers to execute 'osc browse' to immediately open the newly created project in the web browser.
