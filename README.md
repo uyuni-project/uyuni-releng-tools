@@ -47,6 +47,19 @@ The script `build-packages-for-obs` is used together with `push-packages-to-obs`
 
 A comprehensive how-to is available at the following wiki page [Building-an-RPM-in-an-OBS-branch-package](https://github.com/uyuni-project/uyuni/wiki/Building-an-RPM-in-an-OBS-branch-package)
 
+
+## push-images-to-git and push-packages-to-git
+
+These scripts push package or image sources prepared with `build-packages-for-obs` into git (src.opensuse.org or src.suse.de) which act as source storage for the Open Build Service.
+
+
+## push-to-obs.sh
+
+The script `push-to-obs.sh` run a container to push SUSE Multi-Linux Manager/Uyuni packages to IBS/OBS and git.
+
+Internally it uses build-packages-for-obs, push-packages-to-obs, push-images-to-git and push-packages-to-git to perform the final tasks.
+
+
 ## check-obs-project-status
 
 The script `check-obs-project-status` is used to verify that all packages, products, containers and images are successfully building in the given projects.
