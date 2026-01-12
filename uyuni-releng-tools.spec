@@ -32,9 +32,11 @@ Tools helping to prepare Uyuni release submissions.
 
 %install
 install -m 0755 -vd %{buildroot}%{_bindir}
-install -m 0755 -vp ./bin/* %{buildroot}%{_bindir}/
 install -m 0755 -vd %{buildroot}%{_datadir}/%{name}
+install -m 0755 -vd %{buildroot}%{_datadir}/%{name}/scripts/
+install -m 0755 -vp ./bin/* %{buildroot}%{_bindir}/
 install -m 0644 -cp ./_service %{buildroot}%{_datadir}/%{name}/
+install -m 0755 -vp ./share/* %{buildroot}%{_datadir}/%{name}/scripts/
 
 %files
 %defattr(-,root,root)
