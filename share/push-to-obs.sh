@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 REL_ENG_FOLDER="/manager/rel-eng"
-if [ -d "/manager/.tito/rel-eng" ]; then
-  REL_ENG_FOLDER="/manager/.tito/rel-eng"
+if [ -d "/manager/.tito/" ]; then
+  REL_ENG_FOLDER="/manager/.tito"
 elif [ ! -d "${REL_ENG_FOLDER}" ]; then
   echo "ERROR: Missing rel-eng folder"
   exit 1
