@@ -47,6 +47,16 @@ The script `build-packages-for-obs` is used together with `push-packages-to-obs`
 
 A comprehensive how-to is available at the following wiki page [Building-an-RPM-in-an-OBS-branch-package](https://github.com/uyuni-project/uyuni/wiki/Building-an-RPM-in-an-OBS-branch-package)
 
+## codeowners-sync.sh
+
+This script is used to sync the CODEOWNERS file from Uyuni to downstream Spacewalk repository.
+
+### Usage
+
+1. Review the substitution rules defined with the `SUBSTITUTION_COMMANDS` variable in `codeowners.sync.sh`.
+2. Run the script from the Uyuni repository root directory.
+3. Move the generated CODEOWNERS_spacewalk_temp file to the Spacewalk repository and replace with the original.
+
 
 ## push-images-to-git and push-packages-to-git
 
