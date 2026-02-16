@@ -108,22 +108,6 @@ SCRIPTDIR="/usr/share/uyuni-releng-tools/scripts"
 # store init permissions
 $SCRIPTDIR/initial-objects.sh
 
-# declare /manager as "safe"
-git config --global --add safe.directory /manager
-# we have to have a value; either it is configured or we set one
-if [ -n "$GITUSEREMAIL" ]; then
-    git config --global user.email "$GITUSEREMAIL"
-elif [ -z "$(git config --global user.email)" ]; then
-    echo "ERROR: no git user email address configured"
-    exit 1
-fi
-if [ -n "$GITUSERNAME" ]; then
-    git config --global user.name "$GITUSERNAME"
-elif [ -z "$(git config --global user.name)" ]; then
-    echo "ERROR: no git user email address configured"
-    exit 1
-fi
-
 cd ${REL_ENG_FOLDER}
 
 # If we have more than one destinations, keep SRPMS so we don't
@@ -137,6 +121,7 @@ echo "*************** BUILDING PACKAGES ***************"
 build-packages-for-obs ${PACKAGES}
 
 SUBMITTO=""
+CHECKED_GIT=no
 
 # Submit
 for DESTINATION in $(echo ${DESTINATIONS}|tr ',' ' '); do
@@ -157,6 +142,26 @@ for DESTINATION in $(echo ${DESTINATIONS}|tr ',' ' '); do
     echo "*************** PUSHING TO ${OBS_PROJ} ***************"
     push-packages-to-obs ${PACKAGES}
   elif [ "${SUBMITTO}" = "GIT" ]; then
+
+    if [ "${CHECKED_GIT}" = "no" ]; then
+      # declare /manager as "safe"
+      git config --global --add safe.directory /manager
+      # we have to have a value; either it is configured or we set one
+      if [ -n "$GITUSEREMAIL" ]; then
+          git config --global user.email "$GITUSEREMAIL"
+      elif [ -z "$(git config --global user.email)" ]; then
+          echo "ERROR: no git user email address configured"
+          exit 1
+      fi
+      if [ -n "$GITUSERNAME" ]; then
+          git config --global user.name "$GITUSERNAME"
+      elif [ -z "$(git config --global user.name)" ]; then
+          echo "ERROR: no git user email address configured"
+          exit 1
+      fi
+      CHECKED_GIT=yes
+    fi
+
     export GIT_USR=$(echo ${FIRST}|cut -d'@' -f1)
     export GIT_SRV=$(echo ${FIRST}|cut -d'@' -f2 | cut -d':' -f1)
     export GIT_ORG=$(echo ${FIRST}|cut -d':' -f2 | cut -d'/' -f1)
