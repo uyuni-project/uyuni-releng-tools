@@ -108,6 +108,9 @@ SCRIPTDIR="/usr/share/uyuni-releng-tools/scripts"
 # store init permissions
 $SCRIPTDIR/initial-objects.sh
 
+# declare /manager as "safe"
+git config --global --add safe.directory /manager
+
 cd ${REL_ENG_FOLDER}
 
 # If we have more than one destinations, keep SRPMS so we don't
@@ -144,8 +147,6 @@ for DESTINATION in $(echo ${DESTINATIONS}|tr ',' ' '); do
   elif [ "${SUBMITTO}" = "GIT" ]; then
 
     if [ "${CHECKED_GIT}" = "no" ]; then
-      # declare /manager as "safe"
-      git config --global --add safe.directory /manager
       # we have to have a value; either it is configured or we set one
       if [ -n "$GITUSEREMAIL" ]; then
           git config --global user.email "$GITUSEREMAIL"
