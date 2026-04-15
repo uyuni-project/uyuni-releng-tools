@@ -37,7 +37,8 @@ BRANCH=${BRANCH:-$GIT_BRANCH}
 GIT_CURR_HEAD=$(git rev-parse --short HEAD)
 
 ## used for exec push.sh
-OSCAPI=${OSCAPI:-https://api.suse.de}
+PRODUCT="Uyuni"
+test "$GIT_SRV" = "src.suse.de" && PRODUCT="https://api.suse.de"
 GIT_DIR=$(git rev-parse --show-cdup)
 test -z "$GIT_DIR" || cd "$GIT_DIR"
 GIT_DIR=$(pwd)
@@ -217,7 +218,7 @@ while read PKG_NAME; do
 
   # If there is a push.sh script call it and remove it right after
   if [ -f "${SRPM_PKG_DIR}/push.sh" ]; then
-    bash "${SRPM_PKG_DIR}/push.sh" ${OSCAPI} ${GIT_DIR} ${PKG_NAME}
+    bash "${SRPM_PKG_DIR}/push.sh" ${PRODUCT} ${GIT_DIR} ${PKG_NAME}
     rm "${SRPM_PKG_DIR}/push.sh"
   fi
 

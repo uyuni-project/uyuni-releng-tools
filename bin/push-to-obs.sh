@@ -155,7 +155,7 @@ CMD="$SCRIPTDIR/push-to-obs.sh ${VERBOSE} ${TEST} -d '${DESTINATIONS}' -c /tmp/.
 $EXECUTOR run --rm=true -v ${GITROOT}:/manager ${EXECUTOR_OPTS} --mount type=bind,source=${CREDENTIALS},target=/tmp/.oscrc \
 	-e C_UID \
 	-e C_GID \
-	${MOUNTCOOKIEJAR} ${MOUNTSSHKEY} ${MOUNTTEA} ${CONTAINER} /bin/bash -c "${CMD}" | tee ${GITROOT}/logs/${p}.log
+	${MOUNTCOOKIEJAR} ${MOUNTSSHKEY} ${MOUNTTEA} ${CONTAINER} /bin/bash -c "${CMD}" | tee ${GITROOT}/logs/push-to-obs.log
 
 echo "End of task at ($(date). Logs for each package at ${GITROOT}/logs/"
 
