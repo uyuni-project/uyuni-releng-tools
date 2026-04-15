@@ -39,7 +39,7 @@ GIT_CURR_HEAD=$(git rev-parse --short HEAD)
 
 ## used for exec push.sh
 PRODUCT="Uyuni"
-test "GIT_SRV" = "src.suse.de" && PRODUCT="https://api.suse.de"
+test "$GIT_SRV" = "src.suse.de" && PRODUCT="https://api.suse.de"
 GIT_DIR=$(git rev-parse --show-cdup)
 test -z "$GIT_DIR" || cd "$GIT_DIR"
 GIT_DIR=$(pwd)
