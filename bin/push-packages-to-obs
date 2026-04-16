@@ -46,6 +46,10 @@ GIT_DIR=$(pwd)
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 GIT_CURR_HEAD=$(git rev-parse --short HEAD)
 
+# used for push.sh script
+PRODUCT="Uyuni"
+test "$OSCAPI" = "https://api.suse.de" && PRODUCT="https://api.suse.de"
+
 grep -v -- "\(--help\|-h\|-?\)\>" <<<"$@" || {
   cat <<EOF
 Usage: push-packages-to-obs.sh [PACKAGE]..
@@ -275,7 +279,7 @@ while read PKG_NAME; do
 
   # Is there is a push.sh script call it and remove it right after
   if [ -f "${SRPM_PKG_DIR}/push.sh" ]; then
-    bash "${SRPM_PKG_DIR}/push.sh" ${OSCAPI} ${GIT_DIR} ${PKG_NAME}
+    bash "${SRPM_PKG_DIR}/push.sh" ${PRODUCT} ${GIT_DIR} ${PKG_NAME}
     rm "${SRPM_PKG_DIR}/push.sh"
   fi
 
