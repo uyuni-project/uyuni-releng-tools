@@ -84,7 +84,7 @@ function srpm_package_defs() {
       echo "No package dir '$SRPM_DIR/$N'" >&2
       exit 99
     }
-    test -e $SRPM_DIR/$N/Dockerfile && { echo "$N"; continue; }
+    exists $SRPM_DIR/$N/Dockerfile* && { echo "$N"; continue; }
     test -e $SRPM_DIR/$N/Chart.yaml && { echo "$N"; continue; }
     exists $SRPM_DIR/$N/*.kiwi && { echo "$N"; continue; }
     echo "$N is not an image. Skipping..." >&2

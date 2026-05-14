@@ -18,7 +18,7 @@ exists() {
 }
 
 is_package() {
-  test -e /tmp/push-packages-to-obs/SRPMS/$1/Dockerfile && { echo "$1 is not a package"; return 1; }
+  exists /tmp/push-packages-to-obs/SRPMS/$1/Dockerfile* && { echo "$1 is not a package"; return 1; }
   test -e /tmp/push-packages-to-obs/SRPMS/$1/Chart.yaml && { echo "$1 is not a package"; return 1; }
   exists /tmp/push-packages-to-obs/SRPMS/$1/*.kiwi && { echo "$1 is not a package"; return 1; }
   return 0
