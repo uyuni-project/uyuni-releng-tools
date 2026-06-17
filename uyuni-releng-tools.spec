@@ -21,6 +21,10 @@ Requires:       git-core
 Requires:       git-lfs
 Requires:       osc
 Requires:       tito
+Requires:       dpkg
+Requires:       curl
+Requires:       awk
+Requires:       rpmdevtools
 
 %description
 Tools helping to prepare Uyuni release submissions.
