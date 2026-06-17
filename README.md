@@ -101,3 +101,14 @@ Key Features:
 * Dynamic Repositories: Enables defining multi-path repositories and automatically discovers the available architecture list from the specified source repository/path.
 * Consolidated Role Input: Streamlines the process of assigning multiple roles (Maintainer/Reviewer) to users or groups.
 * Post-Creation Action: Offers to execute 'osc browse' to immediately open the newly created project in the web browser.
+
+## compare-uyuni-repos.sh
+
+This script is handful for checking the "release-version" of the packages that we have in our "Master" repositories and compare them with their "Stable" counterparts to verify that packages in "Master" have always an equal or higher "version-release" number than what it has been already released in "Stable" repositories, ensuring it is safe to release the packages in "Master".
+
+~~~
+Usage: compare_uyuni_repos.sh <master_repo_url>
+
+# Example:
+# compare_uyuni_repos.sh https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Master:/SLE15-Uyuni-Client-Tools/SLE_15/
+~~~
