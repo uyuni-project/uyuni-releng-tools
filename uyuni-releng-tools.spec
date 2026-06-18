@@ -23,8 +23,10 @@ Requires:       osc
 Requires:       tito
 Requires:       dpkg
 Requires:       curl
-Requires:       awk
+Requires:       gawk
+%if 0%{?suse_version} || 0%{?rhel} || 0%{?fedora}
 Requires:       rpmdevtools
+%endif
 
 %description
 Tools helping to prepare Uyuni release submissions.
