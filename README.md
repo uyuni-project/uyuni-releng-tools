@@ -45,7 +45,7 @@ The default editor can be specified by setting the EDITOR environment variable.
 
 The script `build-packages-for-obs` is used together with `push-packages-to-obs` for building a source from git and pushing it to a project on the Open Build Service and build it there.
 
-A comprehensive how-to is available at the following wiki page [Building-an-RPM-in-an-OBS-branch-package](https://github.com/uyuni-project/uyuni/wiki/Building-an-RPM-in-an-OBS-branch-package)
+A comprehensive how-to is available at the following wiki page [Building-an-RPM-or-images-in-an-OBS-branch](https://github.com/uyuni-project/uyuni/wiki/Building-an-RPM-or-images-in-an-OBS-branch)
 
 ## codeowners-sync.sh
 
