@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jul 10 16:18:13 WEST 2026 - psuarezhernandez@suse.com
+
+- version 0.0.11-0
+  * compare-uyuni-repos: fix issue if pkgA has pkgB on its name
+
+-------------------------------------------------------------------
 Thu Jun 18 11:15:46 WEST 2026 - psuarezhernandez@suse.com
 
 - version 0.0.10-0
