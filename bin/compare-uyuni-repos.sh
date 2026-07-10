@@ -207,8 +207,8 @@ while IFS='|' read -r pkg_name pkg_arch master_vr; do
     echo "📦 Checking: $pkg_name ($pkg_arch)"
     echo "   ├─ Master: $master_vr"
 
-    # Look up the exact package name AND architecture in the Stable package list
-    stable_lines=$(grep -F "${pkg_name}|${pkg_arch}|" "$TMP_DIR/stable_pkgs.txt" || true)
+    # Look up the exact package name AND architecture by strictly matching columns 1 (name) and 2 (arch)
+    stable_lines=$(awk -F'|' -v name="$pkg_name" -v arch="$pkg_arch" '$1 == name && $2 == arch' "$TMP_DIR/stable_pkgs.txt")
 
     if [ -z "$stable_lines" ]; then
         echo "   └─ Not found in Stable (Skipping)"
