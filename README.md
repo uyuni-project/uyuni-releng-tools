@@ -84,6 +84,27 @@ OBS_PROJS    The projects to check. Seperated by space.
              (Default: systemsmanagement:Uyuni:Master systemsmanagement:Uyuni:Master:Other ...)
 ~~~
 
+## find_labels.py
+
+This script searches an Open Build Service (OBS) project to find all packages that have a specific label assigned to them.
+
+Since OBS does not natively expose package labels to its XPath search API, this script works around the limitation by discovering packages using `osc ls` and then individually querying the `/labels` API endpoint for each package.
+
+**Note on scmsync:** Projects managed entirely via Git (`scmsync`) currently suffer from an OBS backend bug where virtual packages are not fully represented in the database, causing label lookups to fail. The script detects these projects and exits early to save time, but this safety check can be bypassed with the `--force` flag.
+
+### Usage
+
+~~~
+Usage: find_labels.py [-h] -p PROJECT -l LABEL [-a API_URL] [-v] [-f]
+
+Examples:
+  # Basic search on the default OBS instance
+  find_labels.py -p systemsmanagement:Uyuni:Utils -l deleteme
+
+  # Search on a specific OBS instance (e.g., SUSE internal) with verbose output
+  find_labels.py -p Devel:Galaxy:Manager:5.2 -l deleteme -a https://api.suse.de -v
+~~~
+
 ## obs_subproject_creator.py
 
 The script  `obs_subproject_creator.py` is used for generating an OBS/IBS subproject.

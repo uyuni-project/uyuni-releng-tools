@@ -1,0 +1,2 @@
+- Add bin/find_labels.py to search for OBS labels in a given OBS
+  project
