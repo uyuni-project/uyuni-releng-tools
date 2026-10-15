@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Thu Oct 15 18:26:06 CEST 2026 - marina.latini@suse.com
+
+- version 0.0.13-0
+  * Add bin/find_labels.py to search for OBS labels in a given OBS
+    project
+  * Add /bin/process_trackers_release_notes.py to fetch Bugzilla IDs
+    for SUSE CVEs and reformat them for AsciiDoc release notes
+
+-------------------------------------------------------------------
 Thu Sep 24 18:08:30 CEST 2026 - marina.latini@suse.com
 
 - version 0.0.12-0
