@@ -7,7 +7,13 @@ name: Push to OBS
 on:
   push:
     branches:
-      - main
+      - test-workflow-fixes # use this just for testing
+  pull_request:
+  workflow_dispatch: # Allows manual triggering from the UI for testing
+
+# Explicitly limit the GITHUB_TOKEN permissions
+permissions:
+  contents: read
 
 jobs:
   push_to_obs:
@@ -17,14 +23,16 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-      
+
       - name: Add repositories
         run: |
           sudo sh -c 'echo "deb https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/ /" >/etc/apt/sources.list.d/utils.list'
-          curl -L https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/Release.key | sudo apt-key add -
+          curl -fsSL https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/uyuni-utils.gpg > /dev/null
+
           sudo sh -c 'echo "deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/ /" >/etc/apt/sources.list.d/tools.list'
-          curl -L https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/Release.key | sudo apt-key add -
-          sudo apt update
+          curl -fsSL https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/opensuse-tools.gpg > /dev/null
+
+          sudo apt-get update
 
       - name: Install dependencies
         run: sudo apt-get install -y --no-install-recommends tito osc
@@ -34,7 +42,10 @@ jobs:
           mkdir -p ~/.config/osc
           echo -e "[general]\napiurl=https://api.opensuse.org\n\n[https://api.opensuse.org]\nuser = ${{ secrets.OBS_USER }}\npass = ${{ secrets.OBS_PASS }}\n" >~/.config/osc/oscrc
           chmod -R 700 ~/.config/osc
-          ./bin/build-packages-for-obs && ./bin/push-packages-to-obs
+
+          # Run the build, but the push is commented out for testing
+          ./bin/build-packages-for-obs
+          # && ./bin/push-packages-to-obs
         env:
           TEST: "--test"
           OSCAPI: https://api.opensuse.org
