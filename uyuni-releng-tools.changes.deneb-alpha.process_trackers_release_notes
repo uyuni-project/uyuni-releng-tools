@@ -1,0 +1,2 @@
+- Add /bin/process_trackers_release_notes.py to fetch Bugzilla IDs
+  for SUSE CVEs and reformat them for AsciiDoc release notes

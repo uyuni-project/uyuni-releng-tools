@@ -11,7 +11,7 @@ These used to be in the `uyuni` repository and have been extracted to be used fo
 
 # Dependencies
 
-* `tito` from [systemsmanagement:Uyuni:Utils](https://build.opensuse.org/project/show/systemsmanagement:Uyuni:Utils)
+- `tito` from [systemsmanagement:Uyuni:Utils](https://build.opensuse.org/project/show/systemsmanagement:Uyuni:Utils)
 
 # Existing tools
 
@@ -115,13 +115,13 @@ by leveraging the official **'osc' command** for all authenticated network opera
 
 Key Features:
 
-* Secure and native authentication: Relies entirely on the system's 'osc' configuration.
-* Intelligent Defaults: Suggests API URLs (e.g., api.opensuse.org) and template projects based on the target API endpoint.
-* Input Validation: Strictly validates Project names, User IDs, and Group IDs against the API before proceeding.
-* Template Merging: Supports cloning meta-data from a project template, allowing the user to selectively import Roles, Repositories, Release Targets, and Build Tags.
-* Dynamic Repositories: Enables defining multi-path repositories and automatically discovers the available architecture list from the specified source repository/path.
-* Consolidated Role Input: Streamlines the process of assigning multiple roles (Maintainer/Reviewer) to users or groups.
-* Post-Creation Action: Offers to execute 'osc browse' to immediately open the newly created project in the web browser.
+- Secure and native authentication: Relies entirely on the system's 'osc' configuration.
+- Intelligent Defaults: Suggests API URLs (e.g., api.opensuse.org) and template projects based on the target API endpoint.
+- Input Validation: Strictly validates Project names, User IDs, and Group IDs against the API before proceeding.
+- Template Merging: Supports cloning meta-data from a project template, allowing the user to selectively import Roles, Repositories, Release Targets, and Build Tags.
+- Dynamic Repositories: Enables defining multi-path repositories and automatically discovers the available architecture list from the specified source repository/path.
+- Consolidated Role Input: Streamlines the process of assigning multiple roles (Maintainer/Reviewer) to users or groups.
+- Post-Creation Action: Offers to execute 'osc browse' to immediately open the newly created project in the web browser.
 
 ## compare-uyuni-repos.sh
 
@@ -132,4 +132,33 @@ Usage: compare_uyuni_repos.sh <master_repo_url>
 
 # Example:
 # compare_uyuni_repos.sh https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Master:/SLE15-Uyuni-Client-Tools/SLE_15/
+~~~
+
+## process_trackers_release_notes.py
+
+This script processes text files containing CVE references and SUSE Bugzilla/FATE IDs, standardizing them into a clean, uniform AsciiDoc list format suitable for release notes.
+
+It queries the SUSE Bugzilla REST API to fetch missing Bug IDs for given CVEs, and performs reverse-lookups to find missing CVEs for given Bug IDs. It requires the `requests` and `keyring` python libraries to run.
+
+Key Features:
+- **AsciiDoc Formatting:** Validates SUSE CVE URLs (checking for 404s) and applies proper AsciiDoc links. Formats `fate#` and groups multiple trailing Bugzilla references into a single block.
+- **Tracker Normalization:** Automatically converts `boo#` and `bnc#` to `bsc#`.
+- **Deduplication:** Automatically drops identical entries to keep the list clean.
+- **Secure Credentials:** Prompts for your SUSE Bugzilla API token on first run and securely stores it in the system keyring.
+- **Tracker Summary:** Always generates a final wrapped summary block of all CVEs and bugs at the bottom of the output.
+
+### Usage
+
+~~~
+Usage: process_trackers_release_notes.py [-h] [-o OUTPUT] [-t TOKEN] [-b] input_file
+
+Examples:
+  # Process a list of CVEs and generate 'input_with_bsc.txt' in the same directory
+  process_trackers_release_notes.py input.txt
+
+  # Save to a specific output file
+  process_trackers_release_notes.py input.txt -o /path/to/formatted_notes.txt
+
+  # Tracker Summary Mode: Extract only the wrapped bug/CVE/FATE tracker summary, skipping the formatted text
+  process_trackers_release_notes.py input.txt -b
 ~~~
