@@ -8,8 +8,6 @@ on:
   push:
     branches:
       - test-workflow-fixes # use this just for testing
-  pull_request:
-  workflow_dispatch: # Allows manual triggering from the UI for testing
 
 # Explicitly limit the GITHUB_TOKEN permissions
 permissions:
@@ -17,7 +15,7 @@ permissions:
 
 jobs:
   push_to_obs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
         with:
@@ -26,11 +24,11 @@ jobs:
 
       - name: Add repositories
         run: |
-          sudo sh -c 'echo "deb https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/ /" >/etc/apt/sources.list.d/utils.list'
-          curl -fsSL https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_22.04-debbuild/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/uyuni-utils.gpg > /dev/null
+          sudo sh -c 'echo "deb https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_26.04-debbuild/ /" >/etc/apt/sources.list.d/utils.list'
+          curl -fsSL https://download.opensuse.org/repositories/systemsmanagement:/Uyuni:/Utils/xUbuntu_26.04-debbuild/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/uyuni-utils.gpg > /dev/null
 
-          sudo sh -c 'echo "deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/ /" >/etc/apt/sources.list.d/tools.list'
-          curl -fsSL https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/opensuse-tools.gpg > /dev/null
+          sudo sh -c 'echo "deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_26.04/ /" >/etc/apt/sources.list.d/tools.list'
+          curl -fsSL https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_26.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/opensuse-tools.gpg > /dev/null
 
           sudo apt-get update
 
