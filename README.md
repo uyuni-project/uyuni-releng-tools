@@ -123,6 +123,62 @@ Key Features:
 - Consolidated Role Input: Streamlines the process of assigning multiple roles (Maintainer/Reviewer) to users or groups.
 - Post-Creation Action: Offers to execute 'osc browse' to immediately open the newly created project in the web browser.
 
+## obs_setup_special_projects.py
+
+This script automates the maintenance and protection of special Open Build Service (OBS) subprojects (such as Uyuni Snapshot releases). It leverages the official `osc` client for authenticated API calls and metadata updates.
+
+Key Features:
+- **Delete Request Cleanup:** Automatically searches for and declines open (`new` or `review`) delete requests targeting the matched subprojects.
+- **Role Management:** Ensures the specified group (default: `uyuni-maintainers`) is assigned as both `maintainer` and `reviewer` in the project `_meta`.
+- **Request Rejection Policy:** Configures the `OBS:RejectRequests` project attribute with a custom explanatory message followed by `delete` and `submit` actions.
+- **Safe Lock Handling:** Detects locked projects and skips them by default. When `--unlock` is passed, it verifies that `<build><disable/></build>` is present in the project metadata before temporarily unlocking, applying changes, and re-locking. Optionally locks unlocked build-disabled projects via `--lock`.
+- **Logging & Summary:** Outputs clean console progress while saving timestamped execution details to `obs_setup_special_projects_<timestamp>.log`, concluding with an overview of declined requests and skipped projects.
+
+### Usage
+
+~~~
+usage: obs_setup_special_projects.py [-h] [-A APIURL] [-p BASE_PROJECT]
+                                     [-g GROUP] [--decline-msg DECLINE_MSG]
+                                     [--reject-text REJECT_TEXT]
+                                     [--log-file LOG_FILE] [--unlock] [--lock]
+                                     [--lock-msg LOCK_MSG]
+                                     [--unlock-msg UNLOCK_MSG]
+
+Automate OBS project cleanup: declines delete requests, assigns group roles,
+and sets RejectRequests attributes.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -A APIURL, --apiurl APIURL
+                        OBS API URL (default: https://api.opensuse.org)
+  -p BASE_PROJECT, --base-project BASE_PROJECT
+                        Base project name to search for subprojects (default: systemsmanagement:Uyuni:Snapshots:)
+  -g GROUP, --group GROUP
+                        Group ID to add as maintainer and reviewer (default: uyuni-maintainers)
+  --decline-msg DECLINE_MSG
+                        Message to use when declining delete requests
+  --reject-text REJECT_TEXT
+                        Text for the OBS:RejectRequests attribute
+  --log-file LOG_FILE   Path to the log file (default:
+                        obs_setup_special_projects_<timestamp>.log)
+  --unlock              Attempt to safely unlock and process locked projects
+                        (only if build is disabled)
+  --lock                Lock the project after all operations are complete (only if build is disabled)
+  --lock-msg LOCK_MSG   Comment passed when locking a project
+  --unlock-msg UNLOCK_MSG
+                        Comment passed when unlocking a project
+
+Examples:
+  # Run against all Uyuni Snapshot subprojects (skips locked projects)
+  obs_setup_special_projects.py
+
+  # Target a specific subproject and safely unlock/re-lock it if build-disabled
+  obs_setup_special_projects.py -p systemsmanagement:Uyuni:Snapshots:2026.08 --unlock
+
+  # Process a project and lock it afterwards (only if builds are disabled)
+  obs_setup_special_projects.py -p systemsmanagement:Uyuni:Snapshots:2026.10 --lock
+~~~
+
 ## compare-uyuni-repos.sh
 
 This script is handful for checking the "release-version" of the packages that we have in our "Master" repositories and compare them with their "Stable" counterparts to verify that packages in "Master" have always an equal or higher "version-release" number than what it has been already released in "Stable" repositories, ensuring it is safe to release the packages in "Master".
